@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- hk-build:20261125212014 -->
+<!-- hk-build:20261125212923 -->
 <html lang="ja" data-pwa="1">
 <head>
 <meta charset="UTF-8">
@@ -119,6 +119,51 @@ body.hide .dash .dbig,body.hide .dash .ca,body.hide .dash .da,body.hide .dash .d
 .dmore>summary small{font-weight:400;color:var(--muted);font-size:12px}
 .txc>summary .sub{margin-left:auto;font-weight:400;font-size:13px;color:var(--muted)}
 #kb .kbtools>div{margin-top:16px;padding-top:12px;border-top:1px solid var(--line2)}#kb .kbtools>div:first-of-type{border-top:0;padding-top:0}
+/* マネーフォワード風のまとめ */
+.mfwrap{display:grid;gap:12px;margin-bottom:16px}
+.mf{--p:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:var(--p)}
+.mf h3{margin:0 0 12px;font-size:15px;font-weight:800;color:var(--ink)}
+.mftop{background:var(--accent-soft);border-color:transparent}.mftop.sig-y{background:#FFF6E0}.mftop.sig-r{background:#FCEBEA}
+.mfrow{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.mfl{font-size:13px;color:var(--muted);font-weight:600}
+.mftop .dbig{display:block;margin:2px 0 8px}
+.mftop .bar{position:relative;overflow:visible;background:#fff}.mftop .bar i{background:var(--accent);border-radius:7px}.mftop.sig-y .bar i{background:#D9A21B}.mftop.sig-r .bar i{background:var(--red)}
+.mftop .bar em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.5}
+.mfsm{font-size:13px;color:var(--muted);margin-top:6px}.mfsm b{font-size:15px}
+.mfli{display:flex;align-items:center;gap:12px;width:100%;padding:10px 0;border:0;border-top:1px solid var(--line2);background:none;text-align:left;font:inherit;color:inherit;min-height:56px;cursor:default}
+button.mfli{cursor:pointer}.mfli:first-of-type{border-top:0}.mfli.off{opacity:.5}
+.mfic{flex:0 0 40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--line2)}
+.mfic.due{border-radius:12px;background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:16px;flex-basis:48px;height:48px;flex-direction:column;line-height:1}.mfic.due small{font-size:10px;font-weight:600}
+.mfn{flex:1;min-width:0;font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis}.mfn small{display:block;font-weight:400;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mfn .new{font-style:normal;font-size:11px;background:var(--amber-soft);color:var(--amber);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.mfa{font-size:16px;font-weight:700;white-space:nowrap}.mfa small{font-size:11px;font-weight:400;margin-left:1px}
+.mfday{font-size:12px;font-weight:700;color:var(--muted);background:var(--paper);margin:8px calc(-1*var(--p)) 0;padding:6px var(--p)}
+.mfmore{width:100%;margin-top:8px;padding:12px;border:0;border-top:1px solid var(--line2);background:none;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;min-height:44px}
+.mfpie{display:flex;align-items:center;gap:14px}
+.donut{width:46%;max-width:180px;flex:0 0 auto}.donut .dl1{font-size:10px;fill:var(--muted)}.donut .dl2{font-size:17px;font-weight:800;fill:var(--ink)}
+.mfleg{flex:1;display:grid;gap:6px;min-width:0}
+.mfleg div{display:grid;grid-template-columns:10px 1fr auto;column-gap:6px;align-items:center;font-size:13px}
+.mfleg i{width:10px;height:10px;border-radius:3px}.mfleg span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mfleg b{font-size:14px}
+.mfleg span small{color:var(--muted);font-size:11px;margin-left:4px}
+.mfbars{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:end}
+.mfbars>div{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.mfbars small{font-size:10px;color:var(--muted);white-space:nowrap}
+.mfbars span{position:relative;width:70%;height:110px;display:flex;align-items:flex-end}
+.mfbars span i{display:block;width:100%;background:#BFD8C9;border-radius:6px 6px 2px 2px}.mfbars .on span i{background:var(--accent)}
+.mfbars span em{position:absolute;left:-15%;right:-15%;border-top:2px dashed var(--red);opacity:.6}
+.mfbars b{font-size:12px;font-weight:600}.mfbars .on b{color:var(--accent);font-weight:800}
+body.hide .mfwrap .dbig,body.hide .mfwrap .mfa,body.hide .mfwrap .mfleg b,body.hide .mfwrap .dl2,body.hide .mfwrap .mfsm b,body.hide .mfwrap .mfbars small{filter:blur(7px)}
+/* スマホ */
+@media (max-width:520px){
+  main{padding-left:12px!important;padding-right:12px!important}
+  .card{border-radius:16px}
+  .mf{--p:14px}
+  .dbig{font-size:38px}
+  .btn{min-height:46px}
+  #kb .r{min-height:52px}#kb .r label,#kb .r .n{font-size:15px}
+  #kb .r input{font-size:17px!important;min-height:44px}
+  .seg button{min-height:42px;font-size:14px}
+}
 .pairf{margin-top:14px;text-align:left}.pairf label{display:block;font-size:14px;font-weight:600;margin-top:12px}.pairf input{margin-top:4px}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs button{flex:1;min-width:0;border:0;background:none;padding:8px 0 6px;cursor:pointer;color:var(--muted);font-size:10.5px;min-height:56px;white-space:nowrap}
@@ -368,6 +413,6 @@ nav.tabs button span{font-size:22px}
 <div id="root"></div>
 <dialog id="dlg"></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="app.js?v=20261125212014"></script>
+<script src="app.js?v=20261125212923"></script>
 </body>
 </html>

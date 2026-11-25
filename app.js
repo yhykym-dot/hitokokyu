@@ -618,28 +618,42 @@ function dashDue(){const out=[],t0=new Date();t0.setHours(0,0,0,0);const days=d=
   const kb=S.kb;if(kb&&Array.isArray(kb.items))kb.items.filter(x=>x.plan&&Array.isArray(x.plan.m)&&x.plan.m.length).forEach(it=>{let best=null;for(let k=0;k<13;k++){const d=new Date(t0.getFullYear(),t0.getMonth()+k,1);if(!it.plan.m.includes(d.getMonth()+1))continue;const day=new Date(d.getFullYear(),d.getMonth(),Math.min(it.day||(kb.settings&&kb.settings.payDay)||27,dim(d.getFullYear(),d.getMonth()+1)));if(day>=t0){best=day;break}}if(best)out.push({name:it.label,amt:it.plan.amt,n:days(best)})});
   upcoming().forEach(({ym,f})=>{if(!f.target)return;const d=new Date(+ym.slice(0,4),+ym.slice(5,7)-1,1);const n=Math.max(0,days(d));if(n<=366)out.push({name:f.name,amt:f.target,n,ym:true})});
   return out.sort((a,b)=>a.n-b.n).slice(0,3)}
+/* マネーフォワードのような見た目：円グラフ・月ごとの棒・日付ごとの入出金 */
+const DCOL={'カフェ':'#9A6B45','サウナ':'#2B6C8A','服':'#7C5CBF','ネット':'#D9822B','食べもの':'#1C7A4E','その他':'#A39E97'};
+function dashTx(){const out=[],ic=k=>(DASH_CAT.find(x=>x[2].test(k))||DASH_CAT[5]);
+  (S.cardTx||[]).filter(t=>!t.voided).forEach(t=>{const c=ic(t.cat||'');out.push({date:t.date,time:t.time||'',name:t.name||t.raw||'カード',sub:`${CARDN[t.card]||'カード'}・${t.cat||''}`,amt:t.amount,ic:c[0],cn:c[1],id:t.id,off:!txCounts(t),nw:!t.ok})});
+  S.logs.forEach(l=>{const d=new Date(l.ts),c=ic(l.label||l.key||'');out.push({date:iso(d),time:pad(d.getHours())+':'+pad(d.getMinutes()),name:l.label||'記録',sub:'ワンタップ記録',amt:l.amount,ic:c[0],cn:c[1]})});
+  S.purchases.filter(p=>!p.sub).forEach(p=>{const c=ic(p.category||'');out.push({date:p.date,time:'',name:p.item||'買い物',sub:p.category||'',amt:p.amount,ic:c[0],cn:c[1]})});
+  S.mercari.purchases.forEach(p=>out.push({date:p.date,time:'',name:p.item||'メルカリ',sub:'メルカリ',amt:p.amount,ic:'👕',cn:'服'}));
+  return out.filter(x=>x.amt>0).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time))}
+function donut(cats,total){const R=52,C=2*Math.PI*R;let off=0;const segs=cats.map(c=>{const len=c.a/total*C;const el=`<circle r="${R}" cx="70" cy="70" fill="none" stroke="${DCOL[c.n]||'#A39E97'}" stroke-width="22" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`;off+=len;return el}).join('');
+  return`<svg viewBox="0 0 140 140" class="donut" role="img" aria-label="今月の支出の内わけ"><circle r="${R}" cx="70" cy="70" fill="none" stroke="var(--line2)" stroke-width="22"/>${segs}<text x="70" y="64" text-anchor="middle" class="dl1">今月の支出</text><text x="70" y="84" text-anchor="middle" class="dl2">${man(total)}</text></svg>`}
 function vDash(){const bc=budgetCalc(),d=new Date(),nd=dim(d.getFullYear(),d.getMonth()+1),day=d.getDate(),ym=nowYM();
+  /* 1 予算 */
   let top;
   if(bc.b){const pace=bc.spent/day*nd,end=bc.b-pace,ratio=bc.spent/(bc.b*day/nd||1),sig=bc.rem<0||ratio>1.15?'r':ratio>1?'y':'g',L={g:'🟢 順調',y:'🟡 少し速い',r:'🔴 使いすぎ'};
-    top=`<div class="dtop sig-${sig}"><div><small>今月あと使えるお金</small><b class="dbig">${man(bc.rem)}</b><span class="dsig">${L[sig]}</span></div>
-      <p class="dpace">このペースなら月末 <b class="${end<0?'neg':'pos'}">${end<0?'':'＋'}${man(end)}</b> ${end<0?'↘':'↗'}</p>
-      <div class="bar"><i style="width:${clamp(bc.spent/bc.b*100,0,100)}%"></i><em style="left:${day/nd*100}%"></em></div></div>`}
-  else top=`<div class="dtop"><p>月に自由に使ってよい額を決めると、「あといくら使えるか」が出ます。</p><button class="btn" data-act="setBudget">金額を決める</button></div>`;
-  const fl=dashFlow(),t0=new Date();t0.setHours(0,0,0,0);
-  const flow=`<div class="dflow"><div class="dline"><span class="dpt now"><i></i><b>今日</b><small>${d.getMonth()+1}/${day}</small></span>${fl.map(e=>{const n=Math.round((e.at-t0)/864e5);return`<span class="dpt"><i></i><b>${esc(e.t)}</b><small>${e.at.getMonth()+1}/${e.at.getDate()}<br>${n===0?'今日':n===1?'明日':`${n}日後`}</small></span>`}).join('')}</div><button class="lnk" data-act="flowEdit">流れを編集</button></div>`;
-  const cats=dashCats(ym),cmax=Math.max(1,...cats.map(c=>c.a));
-  const catH=cats.length?`<div class="dcat">${cats.map(c=>`<div class="dc"><span class="ic" aria-hidden="true">${c.ic}</span><span class="cn">${c.n}</span><span class="cb"><i style="width:${Math.max(4,c.a/cmax*100)}%"></i></span><span class="ca">${man(c.a)}</span></div>`).join('')}</div>`:'<p class="hint">今月の記録はまだありません。</p>';
-  const sp=spendByDay(),ws=weekStart(d),wk=[],WD='月火水木金土日';for(let i=0;i<7;i++){const x=new Date(ws);x.setDate(ws.getDate()+i);const k=iso(x);wk.push({w:WD[i],a:sp[k]||0,today:k===today(),fut:x>d})}
-  const wmax=Math.max(1,...wk.map(x=>x.a)),wsum=wk.reduce((s,x)=>s+x.a,0),wb=bc.b?bc.b/nd*7:0;
-  const week=`<div class="dweek">${wk.map(x=>`<div class="dw ${x.today?'on':''} ${x.fut?'fut':''}"><span class="wb"><i style="height:${x.a?Math.max(6,x.a/wmax*100):0}%"></i></span><small>${x.w}</small></div>`).join('')}</div><p class="hint">今週 ${man(wsum)}${wb?`（目安 ${man(wb)}）${wsum>wb?' 🔴':' 🟢'}`:''}</p>`;
+    top=`<section class="mf mftop sig-${sig}"><div class="mfrow"><span class="mfl">今月あと使えるお金</span><span class="dsig">${L[sig]}</span></div><b class="dbig">${man(bc.rem)}</b>
+      <div class="bar"><i style="width:${clamp(bc.spent/bc.b*100,0,100)}%"></i><em style="left:${day/nd*100}%"></em></div>
+      <div class="mfrow mfsm"><span>使った ${man(bc.spent)} / 予算 ${man(bc.b)}</span><span>月末の見込み <b class="${end<0?'neg':'pos'}">${end<0?'':'＋'}${man(end)}</b></span></div></section>`}
+  else top=`<section class="mf mftop"><p>月に自由に使ってよい額を決めると、「あといくら使えるか」が出ます。</p><button class="btn" data-act="setBudget">予算を決める</button></section>`;
+  /* 2 大きな支払い */
   const due=dashDue();
-  const dueH=due.length?`<div class="ddue">${due.map(x=>`<div class="dd"><span class="dn">${x.n<=0?'今月':x.ym&&x.n>60?`あと${Math.round(x.n/30)}か月`:`あと<b>${x.n}</b>日`}</span><span class="dl">${esc(x.name)}</span><span class="da">${man(x.amt)}</span></div>`).join('')}</div>`:'';
-  return`<section class="card dash" aria-label="今月のまとめ">${top}
-    ${dueH?`<h3>⏳ 大きな支払いまで</h3>${dueH}`:''}
-    <h3>💸 お金の流れ</h3>${flow}
-    <details class="dmore" data-dfold ${dashOpen?'open':''}><summary>📊 くわしく見る<small>なにに使った・今週</small></summary>
-    <h3>🧾 今月なにに使った？</h3>${catH}
-    <h3>📅 今週</h3>${week}</details></section>`}
+  const dueH=due.length?`<section class="mf"><h3>⏳ 大きな支払いまで</h3>${due.map(x=>`<div class="mfli"><span class="mfic due">${x.n<=0?'今月':x.ym&&x.n>60?`${Math.round(x.n/30)}<small>か月</small>`:`${x.n}<small>日</small>`}</span><span class="mfn">${esc(x.name)}<small>${x.n<=0?'今月':x.ym&&x.n>60?`あと${Math.round(x.n/30)}か月`:`あと${x.n}日`}</small></span><b class="mfa">${man(x.amt)}</b></div>`).join('')}</section>`:'';
+  /* 3 円グラフ */
+  const cats=dashCats(ym),tot=cats.reduce((a,c)=>a+c.a,0);
+  const pie=tot?`<section class="mf"><h3>🧾 今月の支出の内わけ</h3><div class="mfpie">${donut(cats,tot)}<div class="mfleg">${cats.map(c=>`<div><i style="background:${DCOL[c.n]}"></i><span>${c.ic} ${c.n}<small>${Math.round(c.a/tot*100)}%</small></span><b>${man(c.a)}</b></div>`).join('')}</div></div></section>`:'';
+  /* 4 月ごとの棒 */
+  const sp=spendByDay(),mons=[];for(let k=5;k>=0;k--){const x=new Date(d.getFullYear(),d.getMonth()-k,1),key=iso(x).slice(0,7);mons.push({k:key,m:x.getMonth()+1,a:Object.keys(sp).filter(z=>z.slice(0,7)===key).reduce((a,z)=>a+sp[z],0)})}
+  const mmax=Math.max(1,bc.b||0,...mons.map(x=>x.a));
+  const bars=mons.some(x=>x.a)?`<section class="mf"><h3>📊 月ごとの支出</h3><div class="mfbars">${mons.map(x=>`<div class="${x.k===ym?'on':''}"><span><i style="height:${x.a?Math.max(4,x.a/mmax*100):0}%"></i>${bc.b?`<em style="bottom:${bc.b/mmax*100}%"></em>`:''}</span><b>${x.m}月</b><small>${x.a?man(x.a):'−'}</small></div>`).join('')}</div>${bc.b?'<p class="hint">点線は予算</p>':''}</section>`:'';
+  /* 5 入出金 */
+  const tx=dashTx().slice(0,8),g={};tx.forEach(t=>{(g[t.date]=g[t.date]||[]).push(t)});
+  const WD='日月火水木金土';
+  const list=tx.length?`<section class="mf mftx"><h3>🧾 最近の入出金</h3>${Object.keys(g).map(k=>{const x=new Date(k+'T00:00');return`<div class="mfday">${x.getMonth()+1}月${x.getDate()}日（${WD[x.getDay()]}）${k===today()?' ・今日':''}</div>${g[k].map(t=>`<${t.id?`button data-act="txEdit" data-id="${t.id}"`:'div'} class="mfli ${t.off?'off':''}"><span class="mfic" style="background:${DCOL[t.cn]}22">${t.ic}</span><span class="mfn">${esc(t.name)}${t.nw?'<em class="new">確認</em>':''}<small>${esc(t.sub)}</small></span><b class="mfa">−${yen(t.amt).replace('¥','')}<small>円</small></b></${t.id?'button':'div'}>`).join('')}`}).join('')}<button class="mfmore" data-act="txAll">${txAll?'たたむ':'カードの利用をすべて見る ›'}</button></section>`:'';
+  /* 6 お金の流れ */
+  const fl=dashFlow(),t0=new Date();t0.setHours(0,0,0,0);
+  const flow=`<section class="mf"><h3>💸 お金の流れ</h3><div class="dflow"><div class="dline"><span class="dpt now"><i></i><b>今日</b><small>${d.getMonth()+1}/${day}</small></span>${fl.map(e=>{const n=Math.round((e.at-t0)/864e5);return`<span class="dpt"><i></i><b>${esc(e.t)}</b><small>${e.at.getMonth()+1}/${e.at.getDate()}<br>${n===0?'今日':n===1?'明日':`${n}日後`}</small></span>`}).join('')}</div></div><button class="lnk" data-act="flowEdit">流れを編集</button></section>`;
+  return`<div class="mfwrap">${top}${dueH}${pie}${list}${bars}${flow}</div>`}
 let dashOpen=false;document.addEventListener('toggle',e=>{if(e.target&&e.target.hasAttribute&&e.target.hasAttribute('data-dfold'))dashOpen=e.target.open},true);
 function budgetCalc(){const b=S.settings.budget,ym=nowYM(),spent=sum(S.logs.filter(l=>inYM(l.ts,ym)))+sum(S.purchases.filter(p=>!p.sub&&p.date.slice(0,7)===ym))+sum(S.mercari.purchases.filter(p=>p.date.slice(0,7)===ym))+sum((S.cardTx||[]).filter(t=>txCounts(t)&&t.date.slice(0,7)===ym)),d=new Date(),left=dim(d.getFullYear(),d.getMonth()+1)-d.getDate()+1,rem=b-spent;return{b,spent,rem,left,per:Math.floor(Math.max(0,rem)/left)}}
 /* 毎日の支出：日々・購入履歴（定期便以外）・メルカリで買ったもの。0円の記録（家サウナなど）は数えない */
@@ -1046,7 +1060,7 @@ function txSync(force){if(!CLOUD||!S||mode!=='app'||S.settings.txAuto===false||t
     if(res.add||res.up){commit();if(res.add)toast(`カードの利用を ${res.add}件 取り込みました`)}else{save();if(tab==='set')render()}})
     .catch(e=>{txBusy=false;txErr=String(e&&e.message||e).slice(0,120);if(tab==='set')render()})}
 let txAll=false;
-function vTx(){const list=(S.cardTx||[]).filter(t=>!t.voided).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!list.length)return'';const nw=list.filter(t=>!t.ok),show=(txAll?list:nw.length?nw:list).slice(0,txAll?80:6);
+function vTx(){const list=(S.cardTx||[]).filter(t=>!t.voided).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!list.length)return'';const nw=list.filter(t=>!t.ok),show=(txAll?list:nw.length?nw:list).slice(0,txAll?80:6);if(!nw.length&&!txAll)return'';
   const row=t=>`<button class="txr ${txCounts(t)?'':'off'}" data-act="txEdit" data-id="${t.id}"><span class="d">${+t.date.slice(5,7)}/${+t.date.slice(8)}</span><span class="n">${esc(t.name)}<small>${CARDN[t.card]}・${esc(t.cat)}${t.kind==='quick'?'・速報':''}${t.link?'・手で記録済みとまとめた':''}${t.ignore?'・数えない':''}${t.payer&&t.payer!=='本人'?'・'+esc(t.payer):''}</small></span><span class="amt">${yen(t.amount)}</span></button>`;
   const mo=list.filter(t=>txCounts(t)&&t.date.slice(0,7)===nowYM()).reduce((a,t)=>a+t.amount,0);
   return`<details class="card txc kbsum" data-txfold ${nw.length||txOpen||txAll?'open':''}><summary>💳 カードの利用<span class="sub">${nw.length?`<b class="neg">確認待ち ${nw.length}件</b>`:`今月 ${man(mo)}`}</span></summary>${show.map(row).join('')}<div class="btns">${nw.length?'<button class="btn s" data-act="txOkAll">全部確かめた</button>':''}<button class="btn s plain" data-act="txAll">${txAll?'たたむ':'すべて見る'}</button></div><p class="hint">押すと名前・分け方・数えるかを直せます。お店ごとに覚えます。</p></details>`}
