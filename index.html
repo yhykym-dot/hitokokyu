@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- hk-build:20261125214745 -->
+<!-- hk-build:20261125215724 -->
 <html lang="ja" data-pwa="1">
 <head>
 <meta charset="UTF-8">
@@ -171,6 +171,8 @@ body.hide .mfwrap .dbig,body.hide .mfwrap .mfa,body.hide .mfwrap .mfleg b,body.h
 .dk.lift{transform:scale(1.03);box-shadow:0 12px 28px rgba(0,0,0,.18);border-radius:16px;position:relative;z-index:5;opacity:.97}
 body.dkdrag{touch-action:none}body.dkdrag .dk:not(.lift){opacity:.85}
 .mfhint{text-align:center;margin:-4px 0 0;font-size:12px}
+.dk input,.dk textarea,.dk select{-webkit-user-select:text;user-select:text}
+.dk[data-dk=ledger] .kbhead h2{cursor:grab}
 .pairf{margin-top:14px;text-align:left}.pairf label{display:block;font-size:14px;font-weight:600;margin-top:12px}.pairf input{margin-top:4px}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs button{flex:1;min-width:0;border:0;background:none;padding:8px 0 6px;cursor:pointer;color:var(--muted);font-size:10.5px;min-height:56px;white-space:nowrap}
@@ -420,6 +422,6 @@ nav.tabs button span{font-size:22px}
 <div id="root"></div>
 <dialog id="dlg"></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="app.js?v=20261125214745"></script>
+<script src="app.js?v=20261125215724"></script>
 </body>
 </html>
