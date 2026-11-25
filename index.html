@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- hk-build:20261125214142 -->
+<!-- hk-build:20261125214745 -->
 <html lang="ja" data-pwa="1">
 <head>
 <meta charset="UTF-8">
@@ -167,6 +167,10 @@ body.hide .mfwrap .dbig,body.hide .mfwrap .mfa,body.hide .mfwrap .mfleg b,body.h
 .mfre{justify-self:center;background:none;border:1px solid var(--line);border-radius:999px;padding:8px 16px;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;min-height:40px}
 .mfer{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line2)}.mfer .n{flex:1;font-weight:600}.mfer.off .n{opacity:.4;text-decoration:line-through}
 .mfer .mini{border:1px solid var(--line);background:#fff;border-radius:10px;min-width:44px;min-height:44px;font-size:16px;cursor:pointer}.mfer .mini:disabled{opacity:.3}.mfer .ph{border:0;background:none}
+.dk{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .15s,box-shadow .15s}
+.dk.lift{transform:scale(1.03);box-shadow:0 12px 28px rgba(0,0,0,.18);border-radius:16px;position:relative;z-index:5;opacity:.97}
+body.dkdrag{touch-action:none}body.dkdrag .dk:not(.lift){opacity:.85}
+.mfhint{text-align:center;margin:-4px 0 0;font-size:12px}
 .pairf{margin-top:14px;text-align:left}.pairf label{display:block;font-size:14px;font-weight:600;margin-top:12px}.pairf input{margin-top:4px}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs button{flex:1;min-width:0;border:0;background:none;padding:8px 0 6px;cursor:pointer;color:var(--muted);font-size:10.5px;min-height:56px;white-space:nowrap}
@@ -416,6 +420,6 @@ nav.tabs button span{font-size:22px}
 <div id="root"></div>
 <dialog id="dlg"></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="app.js?v=20261125214142"></script>
+<script src="app.js?v=20261125214745"></script>
 </body>
 </html>

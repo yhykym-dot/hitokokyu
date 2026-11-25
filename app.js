@@ -658,7 +658,26 @@ function vDash(){const bc=budgetCalc(),d=new Date(),nd=dim(d.getFullYear(),d.get
   const flow=`<section class="mf"><h3>💸 お金の流れ</h3><div class="dflow"><div class="dline"><span class="dpt now"><i></i><b>今日</b><small>${d.getMonth()+1}/${day}</small></span>${fl.map(e=>{const n=Math.round((e.at-t0)/864e5);return`<span class="dpt"><i></i><b>${esc(e.t)}</b><small>${e.at.getMonth()+1}/${e.at.getDate()}<br>${n===0?'今日':n===1?'明日':`${n}日後`}</small></span>`}).join('')}</div></div><button class="lnk" data-act="flowEdit">流れを編集</button></section>`;
   const blk={budget:top,due:dueH,pie,tx:list,bars,flow},st=S.settings,ord=st.dashOrder||DASH_KEYS,hid=st.dashHide||[];
   if(dashEdit)return`<div class="mfwrap"><section class="mf mfedit"><h3>⇅ ならび順と表示</h3><p class="hint">↑↓で順番を変えます。👁で、見せる・隠すを切りかえます。</p>${ord.map((k,i)=>`<div class="mfer ${hid.includes(k)?'off':''}"><span class="n">${DASH_NAME[k]}</span><button class="mini" data-act="dashMv" data-k="${k}" data-d="-1" ${i?'':'disabled'} aria-label="上へ">↑</button><button class="mini" data-act="dashMv" data-k="${k}" data-d="1" ${i<ord.length-1?'':'disabled'} aria-label="下へ">↓</button>${k==='budget'?'<span class="mini ph"></span>':`<button class="mini" data-act="dashHide" data-k="${k}" aria-label="${hid.includes(k)?'見せる':'隠す'}">${hid.includes(k)?'🙈':'👁'}</button>`}</div>`).join('')}<div class="btns"><button class="btn" data-act="dashEdit">完了</button><button class="btn plain" data-act="dashReset">最初の順に戻す</button></div></section></div>`;
-  return`<div class="mfwrap">${ord.filter(k=>!hid.includes(k)).map(k=>blk[k]||'').join('')}<button class="mfre" data-act="dashEdit">⇅ ならび替え</button></div>`}
+  return`<div class="mfwrap" id="mfwrap">${ord.filter(k=>!hid.includes(k)&&blk[k]).map(k=>`<div class="dk" data-dk="${k}">${blk[k]}</div>`).join('')}<button class="mfre" data-act="dashEdit">⇅ ならび替え・隠す</button><p class="hint mfhint">ブロックを長押しすると、つかんで動かせます</p></div>`}
+/* 長押しでつかんで動かす（指でもマウスでも）。動かし終わったら順番を保存する */
+(()=>{let g=null,swallow=false;const HOLD=450,SLOP=10;
+  const pt=e=>e.touches&&e.touches[0]?e.touches[0]:e.changedTouches&&e.changedTouches[0]?e.changedTouches[0]:e;
+  function down(e){if(dashEdit||g)return;const el=e.target.closest&&e.target.closest('#mfwrap>.dk');if(!el||e.button>0)return;if(e.target.closest('input,select,textarea'))return;
+    const p=pt(e);g={el,x:p.clientX,y:p.clientY,on:false,t:setTimeout(()=>{if(!g)return;g.on=true;el.classList.add('lift');document.body.classList.add('dkdrag');try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}},HOLD)}}
+  function move(e){if(!g)return;const p=pt(e);
+    if(!g.on){if(Math.abs(p.clientX-g.x)>SLOP||Math.abs(p.clientY-g.y)>SLOP){clearTimeout(g.t);g=null}return}
+    e.preventDefault();const y=p.clientY,wrap=g.el.parentNode,sibs=[...wrap.querySelectorAll(':scope>.dk')].filter(x=>x!==g.el);
+    let before=null;for(const s2 of sibs){const r=s2.getBoundingClientRect();if(y<r.top+r.height/2){before=s2;break}}
+    const ref=before||wrap.querySelector(':scope>.mfre');if(g.el.nextSibling!==ref)wrap.insertBefore(g.el,ref);
+    if(y<70)window.scrollBy(0,-12);else if(y>window.innerHeight-110)window.scrollBy(0,12)}
+  function up(){if(!g)return;clearTimeout(g.t);const on=g.on,el=g.el;g=null;if(!on)return;swallow=true;setTimeout(()=>swallow=false,350);
+    el.classList.remove('lift');document.body.classList.remove('dkdrag');
+    const vis=[...document.querySelectorAll('#mfwrap>.dk')].map(x=>x.dataset.dk),old=(S.settings.dashOrder||DASH_KEYS).slice();let i=0;
+    const nw=old.map(k=>vis.includes(k)?vis[i++]:k);if(nw.join()!==old.join()){S.settings.dashOrder=nw;commit();toast('ならび順を変えました')}render()}
+  document.addEventListener('touchstart',down,{passive:true});document.addEventListener('touchmove',move,{passive:false});document.addEventListener('touchend',up);document.addEventListener('touchcancel',up);
+  document.addEventListener('mousedown',down);document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);
+  document.addEventListener('click',e=>{if(swallow){e.preventDefault();e.stopPropagation()}},true);
+  document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('#mfwrap>.dk'))e.preventDefault()});})();
 let dashOpen=false;document.addEventListener('toggle',e=>{if(e.target&&e.target.hasAttribute&&e.target.hasAttribute('data-dfold'))dashOpen=e.target.open},true);
 function budgetCalc(){const b=S.settings.budget,ym=nowYM(),spent=sum(S.logs.filter(l=>inYM(l.ts,ym)))+sum(S.purchases.filter(p=>!p.sub&&p.date.slice(0,7)===ym))+sum(S.mercari.purchases.filter(p=>p.date.slice(0,7)===ym))+sum((S.cardTx||[]).filter(t=>txCounts(t)&&t.date.slice(0,7)===ym)),d=new Date(),left=dim(d.getFullYear(),d.getMonth()+1)-d.getDate()+1,rem=b-spent;return{b,spent,rem,left,per:Math.floor(Math.max(0,rem)/left)}}
 /* 毎日の支出：日々・購入履歴（定期便以外）・メルカリで買ったもの。0円の記録（家サウナなど）は数えない */
