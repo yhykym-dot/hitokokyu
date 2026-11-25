@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- hk-build:20261125192311 -->
+<!-- hk-build:20261125210912 -->
 <html lang="ja" data-pwa="1">
 <head>
 <meta charset="UTF-8">
@@ -83,6 +83,36 @@ label.f{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}
 label.c{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px}
 label.c input{width:20px;height:20px}
 input[type=range]{width:100%}
+/* 家計簿の上のまとめ */
+.dash h3{font-size:14px;margin:18px 0 8px;color:var(--muted);font-weight:700}
+.dtop{border-radius:14px;padding:14px;background:var(--accent-soft)}
+.dtop.sig-y{background:#FFF6E0}.dtop.sig-r{background:#FCEBEA}
+.dtop small{display:block;color:var(--muted);font-size:12px}
+.dbig{font-size:34px;line-height:1.2;font-weight:800;letter-spacing:-.5px;margin-right:10px}
+.dsig{font-size:14px;font-weight:700;white-space:nowrap}
+.dpace{margin:6px 0 8px;font-size:14px}.dpace b{font-size:16px}.dpace small{display:block;margin-top:2px}
+.dtop .bar{position:relative;overflow:visible;background:#fff}.dtop .bar i{background:var(--accent);border-radius:7px}.dtop.sig-y .bar i{background:#D9A21B}.dtop.sig-r .bar i{background:var(--red)}.dtop .bar em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.5}
+.dflow{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.dline{display:flex;gap:0;min-width:max-content;position:relative}
+.dline:before{content:"";position:absolute;left:14px;right:14px;top:9px;height:3px;background:var(--line);border-radius:2px}
+.dline{display:grid;grid-template-columns:repeat(4,1fr);min-width:0}.dpt{position:relative;display:flex;flex-direction:column;align-items:flex-start;min-width:0;padding-right:6px}
+.dpt i{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent);margin-bottom:4px;z-index:1}
+.dpt.now i{background:var(--accent)}
+.dpt b{font-size:13px;line-height:1.3}.dpt small{font-size:12px;color:var(--muted)}
+.lnk{background:none;border:0;color:var(--accent);font-size:13px;padding:6px 0;cursor:pointer;text-decoration:underline}
+.dcat{display:grid;gap:6px}
+.dc{display:grid;grid-template-columns:28px 64px 1fr auto;align-items:center;gap:6px;font-size:14px}
+.dc .ic{font-size:20px}.dc .cb{height:12px;background:var(--line2);border-radius:6px;overflow:hidden}.dc .cb i{display:block;height:100%;background:var(--accent);border-radius:6px}
+.dc .ca{font-weight:700;min-width:52px;text-align:right}
+.dweek{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end}
+.dw{display:flex;flex-direction:column;align-items:center;gap:2px}
+.dw .wb{width:100%;height:56px;background:var(--line2);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden}
+.dw .wb i{display:block;width:100%;background:var(--accent);border-radius:6px}
+.dw.on small{font-weight:800;color:var(--accent)}.dw.fut{opacity:.45}
+.ddue{display:grid;gap:6px}
+.dd{display:grid;grid-template-columns:86px 1fr auto;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
+.dd .dn{font-size:13px}.dd .dn b{font-size:18px}.dd .da{font-weight:700}
+body.hide .dash .dbig,body.hide .dash .ca,body.hide .dash .da,body.hide .dash .dpace b{filter:blur(7px)}
 .pairf{margin-top:14px;text-align:left}.pairf label{display:block;font-size:14px;font-weight:600;margin-top:12px}.pairf input{margin-top:4px}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs button{flex:1;min-width:0;border:0;background:none;padding:8px 0 6px;cursor:pointer;color:var(--muted);font-size:10.5px;min-height:56px;white-space:nowrap}
@@ -332,6 +362,6 @@ nav.tabs button span{font-size:22px}
 <div id="root"></div>
 <dialog id="dlg"></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="app.js?v=20261125192311"></script>
+<script src="app.js?v=20261125210912"></script>
 </body>
 </html>

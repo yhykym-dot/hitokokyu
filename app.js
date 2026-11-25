@@ -409,6 +409,7 @@ function sanitize(d){
   const b=blank(),s=d.settings||{};
   b.settings={threshold:clamp(num(s.threshold,3000),0,1e7),lockHours:clamp(num(s.lockHours,48),0,720),mercariStart:dstr(s.mercariStart),mercariFee:clamp(num(s.mercariFee,10),0,100),mercariLock:clamp(num(s.mercariLock,50),0,100),familyUnit:clamp(num(s.familyUnit,5000),1,1e7),familyLabel:str(s.familyLabel,30)||'家族のお出かけ',autoLockMin:clamp(num(s.autoLockMin,3),0,120),bonusYear:clamp(num(s.bonusYear,0),0,1e9),bonusMonths:[...new Set(arr(s.bonusMonths).map(x=>Math.round(num(x))).filter(x=>x>=1&&x<=12))].sort((a,b)=>a-b),reviewDay:clamp(Math.round(num(s.reviewDay,25)),1,28),budget:clamp(num(s.budget),0,1e8),balance:s.balance==null||!Number.isFinite(Number(s.balance))?null:clamp(Number(s.balance),-1e9,1e9),balanceAt:s.balanceAt?dstr(s.balanceAt):'',merpayDay:clamp(Math.round(num(s.merpayDay,31)),1,31),goalName:str(s.goalName,30),goalAmount:clamp(num(s.goalAmount),0,1e9),saveMonthly:clamp(num(s.saveMonthly),0,1e8),life:lifeClean(s.life),txAuto:s.txAuto!==false,txSince:/^\d{4}-\d{2}-\d{2}$/.test(s.txSince)?s.txSince:'',txFrom:/^\d{4}-\d{2}-\d{2}$/.test(s.txFrom)?s.txFrom:''};
   b.months=arr(d.months).filter(m=>m&&YM.test(m.month)).map(m=>({month:m.month,note:str(m.note,100),income:num(m.income),sheetExpense:num(m.sheetExpense),items:rows(m.items),hidden:rows(m.hidden),excluded:rows(m.excluded)}));
+  b.settings.flowEv=(Array.isArray(s.flowEv)?s.flowEv:FLOW_DEF).slice(0,8).map(x=>({d:clamp(Math.round(num(x&&x.d,1)),1,31),t:str(x&&x.t,20)})).filter(x=>x.t);
   b.wishes=arr(d.wishes).map(w=>({id:str(w.id,40)||uid(),item:str(w.item),price:num(w.price),category:WCATS.includes(w.category)?w.category:'その他',registeredAt:num(typeof w.registeredAt==='number'?w.registeredAt:Date.parse(w.registeredAt),Date.now()),lockHours:clamp(num(w.lockHours,48),0,720),note:str(w.note,300),answers:{q1:str(w.answers&&w.answers.q1,500),q2:str(w.answers&&w.answers.q2,500),q3:str(w.answers&&w.answers.q3,500)},status:['waiting','bought','passed'].includes(w.status)?w.status:'waiting',decidedAt:w.decidedAt?dstr(w.decidedAt):''}));
   const me=d.mercari||{};
   b.mercari.purchases=arr(me.purchases).map(x=>({id:str(x.id,40)||uid(),date:dstr(x.date),item:str(x.item),amount:num(x.amount),payment:str(x.payment,40)}));
@@ -602,6 +603,44 @@ function upcoming(){const n0=ymN(nowYM()),out=[];S.funds.forEach(f=>{let d=ymN(f
 const dim=(y,m)=>new Date(y,m,0).getDate();
 const dayIn=(ym,day)=>`${ym}-${pad(Math.min(day,dim(+ym.slice(0,4),+ym.slice(5))))}`;
 const fmtD=s=>{const d=new Date(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8));return`${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）`};
+/* ---------- 家計簿のいちばん上：ひと目でわかるまとめ ----------
+   1 今月あと使えるお金（色つき） 2 月末の見込み 3 お金の流れ（線） 4 何に使ったか（絵） 5 今週 6 大きな支払いまであと何日 */
+const FLOW_DEF=[{d:23,t:'給料'},{d:27,t:'自動入金'},{d:10,t:'ローン口座へ振込'},{d:27,t:'引き落とし'}];
+const man=n=>{n=Math.round(Number(n)||0);const a=Math.abs(n),sg=n<0?'−':'';return a>=10000?sg+(Math.round(a/1000)/10).toLocaleString('ja-JP')+'万':sg+a.toLocaleString('ja-JP')+'円'};
+const DASH_CAT=[['☕','カフェ',/カフェ|コーヒー|珈琲|スタバ/],['🧖','サウナ',/サウナ|温浴|銭湯/],['👕','服',/服|靴|メルカリ/],['📦','ネット',/ネット|Amazon|アマゾン|通販/],['🍱','食べもの',/コンビニ|外食|食品|ランチ/],['🧴','その他',/./]];
+function dashCats(ym){const m={};const add=(k,a)=>{if(!(a>0))return;const c=DASH_CAT.find(x=>x[2].test(k))||DASH_CAT[5];m[c[1]]=(m[c[1]]||0)+a};
+  (S.cardTx||[]).filter(t=>txCounts(t)&&t.date.slice(0,7)===ym).forEach(t=>add(t.cat||'',t.amount));
+  S.logs.filter(l=>inYM(l.ts,ym)).forEach(l=>add(l.label||l.key||'',l.amount));
+  S.purchases.filter(p=>!p.sub&&p.date.slice(0,7)===ym).forEach(p=>add(p.category||'',p.amount));
+  S.mercari.purchases.filter(p=>p.date.slice(0,7)===ym).forEach(p=>add('メルカリ',p.amount));
+  return DASH_CAT.map(([ic,n])=>({ic,n,a:m[n]||0})).filter(x=>x.a>0).sort((a,b)=>b.a-a.a)}
+function nextOn(day,from){const y=from.getFullYear(),mo=from.getMonth();for(let k=0;k<3;k++){const d=new Date(y,mo+k,Math.min(day,dim(y,mo+k+1)));if(d>=from)return d}return from}
+function dashFlow(){const t0=new Date();t0.setHours(0,0,0,0);return(S.settings.flowEv||FLOW_DEF).map((e,i)=>({...e,i,at:nextOn(e.d,t0)})).sort((a,b)=>a.at-b.at||a.i-b.i).slice(0,3)}
+function dashDue(){const out=[],t0=new Date();t0.setHours(0,0,0,0);const days=d=>Math.round((d-t0)/864e5);
+  const kb=S.kb;if(kb&&Array.isArray(kb.items))kb.items.filter(x=>x.plan&&Array.isArray(x.plan.m)&&x.plan.m.length).forEach(it=>{let best=null;for(let k=0;k<13;k++){const d=new Date(t0.getFullYear(),t0.getMonth()+k,1);if(!it.plan.m.includes(d.getMonth()+1))continue;const day=new Date(d.getFullYear(),d.getMonth(),Math.min(it.day||(kb.settings&&kb.settings.payDay)||27,dim(d.getFullYear(),d.getMonth()+1)));if(day>=t0){best=day;break}}if(best)out.push({name:it.label,amt:it.plan.amt,n:days(best)})});
+  upcoming().forEach(({ym,f})=>{if(!f.target)return;const d=new Date(+ym.slice(0,4),+ym.slice(5,7)-1,1);const n=Math.max(0,days(d));if(n<=366)out.push({name:f.name,amt:f.target,n,ym:true})});
+  return out.sort((a,b)=>a.n-b.n).slice(0,3)}
+function vDash(){const bc=budgetCalc(),d=new Date(),nd=dim(d.getFullYear(),d.getMonth()+1),day=d.getDate(),ym=nowYM();
+  let top;
+  if(bc.b){const pace=bc.spent/day*nd,end=bc.b-pace,ratio=bc.spent/(bc.b*day/nd||1),sig=bc.rem<0||ratio>1.15?'r':ratio>1?'y':'g',L={g:'🟢 順調',y:'🟡 少し速い',r:'🔴 使いすぎ'};
+    top=`<div class="dtop sig-${sig}"><div><small>今月あと使えるお金</small><b class="dbig">${man(bc.rem)}</b><span class="dsig">${L[sig]}</span></div>
+      <p class="dpace">このペースなら月末 <b class="${end<0?'neg':'pos'}">${end<0?'':'＋'}${man(end)}</b> ${end<0?'↘':'↗'}<small>（1日あたり あと ${man(bc.per)}）</small></p>
+      <div class="bar"><i style="width:${clamp(bc.spent/bc.b*100,0,100)}%"></i><em style="left:${day/nd*100}%"></em></div></div>`}
+  else top=`<div class="dtop"><p>月に自由に使ってよい額を決めると、「あといくら使えるか」が出ます。</p><button class="btn" data-act="setBudget">金額を決める</button></div>`;
+  const fl=dashFlow(),t0=new Date();t0.setHours(0,0,0,0);
+  const flow=`<div class="dflow"><div class="dline"><span class="dpt now"><i></i><b>今日</b><small>${d.getMonth()+1}/${day}</small></span>${fl.map(e=>{const n=Math.round((e.at-t0)/864e5);return`<span class="dpt"><i></i><b>${esc(e.t)}</b><small>${e.at.getMonth()+1}/${e.at.getDate()}<br>${n===0?'今日':n===1?'明日':`${n}日後`}</small></span>`}).join('')}</div><button class="lnk" data-act="flowEdit">流れを編集</button></div>`;
+  const cats=dashCats(ym),cmax=Math.max(1,...cats.map(c=>c.a));
+  const catH=cats.length?`<div class="dcat">${cats.map(c=>`<div class="dc"><span class="ic" aria-hidden="true">${c.ic}</span><span class="cn">${c.n}</span><span class="cb"><i style="width:${Math.max(4,c.a/cmax*100)}%"></i></span><span class="ca">${man(c.a)}</span></div>`).join('')}</div>`:'<p class="hint">今月の記録はまだありません。</p>';
+  const sp=spendByDay(),ws=weekStart(d),wk=[],WD='月火水木金土日';for(let i=0;i<7;i++){const x=new Date(ws);x.setDate(ws.getDate()+i);const k=iso(x);wk.push({w:WD[i],a:sp[k]||0,today:k===today(),fut:x>d})}
+  const wmax=Math.max(1,...wk.map(x=>x.a)),wsum=wk.reduce((s,x)=>s+x.a,0),wb=bc.b?bc.b/nd*7:0;
+  const week=`<div class="dweek">${wk.map(x=>`<div class="dw ${x.today?'on':''} ${x.fut?'fut':''}"><span class="wb"><i style="height:${x.a?Math.max(6,x.a/wmax*100):0}%"></i></span><small>${x.w}</small></div>`).join('')}</div><p class="hint">今週 ${man(wsum)}${wb?`（目安 ${man(wb)}）${wsum>wb?' 🔴':' 🟢'}`:''}</p>`;
+  const due=dashDue();
+  const dueH=due.length?`<div class="ddue">${due.map(x=>`<div class="dd"><span class="dn">${x.n<=0?'今月':x.ym&&x.n>60?`あと${Math.round(x.n/30)}か月`:`あと<b>${x.n}</b>日`}</span><span class="dl">${esc(x.name)}</span><span class="da">${man(x.amt)}</span></div>`).join('')}</div>`:'';
+  return`<section class="card dash" aria-label="今月のまとめ">${top}
+    <h3>💸 お金の流れ</h3>${flow}
+    <h3>🧾 今月なにに使った？</h3>${catH}
+    <h3>📅 今週</h3>${week}
+    ${dueH?`<h3>⏳ 大きな支払いまで</h3>${dueH}`:''}</section>`}
 function budgetCalc(){const b=S.settings.budget,ym=nowYM(),spent=sum(S.logs.filter(l=>inYM(l.ts,ym)))+sum(S.purchases.filter(p=>!p.sub&&p.date.slice(0,7)===ym))+sum(S.mercari.purchases.filter(p=>p.date.slice(0,7)===ym))+sum((S.cardTx||[]).filter(t=>txCounts(t)&&t.date.slice(0,7)===ym)),d=new Date(),left=dim(d.getFullYear(),d.getMonth()+1)-d.getDate()+1,rem=b-spent;return{b,spent,rem,left,per:Math.floor(Math.max(0,rem)/left)}}
 /* 毎日の支出：日々・購入履歴（定期便以外）・メルカリで買ったもの。0円の記録（家サウナなど）は数えない */
 function spendByDay(){const m={},add=(d,a)=>{if(a>0)m[d]=(m[d]||0)+a};S.logs.forEach(l=>add(iso(new Date(l.ts)),l.amount));S.purchases.filter(p=>!p.sub).forEach(p=>add(p.date,p.amount));S.mercari.purchases.forEach(p=>add(p.date,p.amount));(S.cardTx||[]).filter(txCounts).forEach(t=>add(t.date,t.amount));return m}
@@ -754,7 +793,7 @@ function render(){
     <button class="ib" data-act="hide" aria-label="金額を隠す">${render.hide?'🙈':'👁'}</button>
     ${KEY?'<button class="ib" data-act="lock" aria-label="ロックする">🔒</button>':''}
 </header>
-    ${cloudBar()}<main class="${tab==='kb'?'wide':''}">${cloudNeedKey()}${CLOUD||storageOK?'':'<div class="card" style="border-color:#E7B8B2"><b>この環境では保存ができません。</b><p class="hint">設定からバックアップを書き出してください。</p></div>'}${msub}${({home:vHome,fund:vFund,mercari:vMercari,shop:vShop,set:vSet,kb:()=>'<div id="kb"></div>'+vTx()}[tab]||(()=>'<div id="kb"></div>'+vTx()))()}</main>
+    ${cloudBar()}<main class="${tab==='kb'?'wide':''}">${cloudNeedKey()}${CLOUD||storageOK?'':'<div class="card" style="border-color:#E7B8B2"><b>この環境では保存ができません。</b><p class="hint">設定からバックアップを書き出してください。</p></div>'}${msub}${({home:vHome,fund:vFund,mercari:vMercari,shop:vShop,set:vSet,kb:()=>vDash()+'<div id="kb"></div>'+vTx()}[tab]||(()=>'<div id="kb"></div>'+vTx()))()}</main>
     <nav class="tabs">${tabs.map(([k,i,l,t])=>`<button class="${g===k?'on':''}" data-act="tab" data-t="${t}"><span>${i}</span>${l}</button>`).join('')}</nav>`;
   if(tab==='kb')KB.mount(document.getElementById('kb'));
   tick()}
@@ -1174,6 +1213,7 @@ const acts={
   contribAll:()=>{const p=fundsPending();if(!p)return;withUndo(`今月分 ${yen(p)} を積みました`,()=>S.funds.forEach(contrib))},
   paid:d=>{const f=S.funds.find(x=>x.id===d.id);ask(`「${f.name}」を支払い済みにしますか？`,()=>withUndo(f.cycle?`次回は ${fmtYM(ymS(ymN(f.due)+f.cycle))} です`:'おつかれさまでした',()=>{if(f.cycle){f.due=ymS(ymN(f.due)+f.cycle);f.saved=Math.max(0,f.saved-f.target);f.last=''}else S.funds=S.funds.filter(x=>x!==f)}),'支払った')},
   lgDone:d=>{const x=S.letgo.find(q=>q.id===d.id);if(x){x.done=!x.done;commit()}},
+  flowEdit:()=>{const ev=S.settings.flowEv||FLOW_DEF;openForm('お金の流れ',[{k:'v',label:'「日にち 名前」を、カンマで区切って（最大8つ）',type:'text',value:ev.map(e=>e.d+' '+e.t).join(', ')}],v=>{const list=String(v.v||'').split(/[,、，\n]/).map(x=>x.trim()).filter(Boolean).slice(0,8).map(x=>{const m=/^(\d{1,2})\s*日?\s*(.+)$/.exec(x);return m?{d:clamp(+m[1],1,31),t:m[2].slice(0,20)}:null}).filter(Boolean);if(!list.length)return toast('「27 引き落とし」のように書いてください');S.settings.flowEv=list;commit();render();toast('お金の流れを変えました')},{desc:'例：23 給料, 27 自動入金, 10 ローン口座へ振込, 27 引き落とし'})},
   setBudget:()=>{const n=flowNet()-fundsMonthly();openForm('今月使ってよい額',[{k:'v',label:'自由に使ってよい額（円・月）',type:'number',value:S.settings.budget||''}],v=>{S.settings.budget=clamp(v.v,0,1e8);commit()},{desc:(S.flows.length?`「毎月の動き」の差し引きから備えの積立を引くと ${yen(n)} です。`:'')+'服・コーヒー・サウナ・ネットの買い物など、固定費以外に使う分の上限です。0にすると表示を消します。'})},
   setBal:()=>openForm('いまの口座残高',[{k:'v',label:'引き落としに使う口座の残高（円）',type:'number',value:S.settings.balance==null?'':Math.max(0,S.settings.balance)}],v=>{S.settings.balance=v.v;S.settings.balanceAt=today();commit()},{desc:'口座番号などは不要です。金額だけ入れてください。'}),
   setMerpayDay:()=>openForm('メルペイあと払いの支払日',[{k:'v',label:'毎月何日か（月末は31）',type:'number',value:S.settings.merpayDay}],v=>{S.settings.merpayDay=clamp(Math.round(v.v)||31,1,31);commit()}),
