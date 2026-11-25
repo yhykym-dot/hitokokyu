@@ -254,11 +254,9 @@ function render(){if(!app)return;D=S&&S.kb;if(!D){app.innerHTML=vSetup();return}
   <div class="kbcols"><div class="kbl">
   <div class="card hero"><h2>${mo(cur)}月　${T('hero')}</h2><div class="big amt" data-o="draw"></div><div class="pills" id="dyn-pills"></div></div>
   <div id="dyn-billwait">${billWaitHtml()}</div>
-  <details class="card kbadv" data-fold="adv" id="dyn-advwrap" ${fold.adv?'open':''} hidden><summary id="dyn-advsum"></summary><div id="dyn-alert"></div><div id="dyn-advice"></div></details>
-  <div class="card" id="dyn-flow"></div>
-  <div class="card" id="dyn-line"></div>
-  <div class="card" id="dyn-sim"></div>
   <div class="card" id="dyn-tasks"></div>
+  <details class="card kbadv" data-fold="adv" id="dyn-advwrap" ${fold.adv?'open':''} hidden><summary id="dyn-advsum"></summary><div id="dyn-alert"></div><div id="dyn-advice"></div></details>
+  <details class="card kbf kbtools" data-fold="tools" ${fold.tools?'open':''}><summary>📈 流れとシミュレーション</summary><div id="dyn-flow"></div><div id="dyn-line"></div><div id="dyn-sim"></div></details>
   </div><div class="kbr">
   <p class="hint noprint kbhint">${edit?'点線の枠の文字を直せます。↑↓で並べ替え、グループを変えると入る式が変わります。「毎月◯日」は引き落とし日です。✕で消しても、すぐ出る「元に戻す」で取り消せます。終わったら右上の「完了」を押してください。':'押すと開いて直せます。▲▼は先月との差です。灰色の行は式で自動計算されます（数字を押すと手で直すこともできます）。「172205+3190」のような足し算もできます。'}</p>
   ${F('income',`<span data-o="dincome"></span><b class="amt" data-o="income"></b>`,`${T('h_1')}${cnt('income')}`,`${list('income')}${G('income').length>1?`<div class="r c sumrow"><div class="n"><b>${T('c_income')}</b></div><b class="amt" data-o="income"></b></div>`:''}`)}
@@ -624,7 +622,7 @@ function vDash(){const bc=budgetCalc(),d=new Date(),nd=dim(d.getFullYear(),d.get
   let top;
   if(bc.b){const pace=bc.spent/day*nd,end=bc.b-pace,ratio=bc.spent/(bc.b*day/nd||1),sig=bc.rem<0||ratio>1.15?'r':ratio>1?'y':'g',L={g:'🟢 順調',y:'🟡 少し速い',r:'🔴 使いすぎ'};
     top=`<div class="dtop sig-${sig}"><div><small>今月あと使えるお金</small><b class="dbig">${man(bc.rem)}</b><span class="dsig">${L[sig]}</span></div>
-      <p class="dpace">このペースなら月末 <b class="${end<0?'neg':'pos'}">${end<0?'':'＋'}${man(end)}</b> ${end<0?'↘':'↗'}<small>（1日あたり あと ${man(bc.per)}）</small></p>
+      <p class="dpace">このペースなら月末 <b class="${end<0?'neg':'pos'}">${end<0?'':'＋'}${man(end)}</b> ${end<0?'↘':'↗'}</p>
       <div class="bar"><i style="width:${clamp(bc.spent/bc.b*100,0,100)}%"></i><em style="left:${day/nd*100}%"></em></div></div>`}
   else top=`<div class="dtop"><p>月に自由に使ってよい額を決めると、「あといくら使えるか」が出ます。</p><button class="btn" data-act="setBudget">金額を決める</button></div>`;
   const fl=dashFlow(),t0=new Date();t0.setHours(0,0,0,0);
@@ -637,10 +635,12 @@ function vDash(){const bc=budgetCalc(),d=new Date(),nd=dim(d.getFullYear(),d.get
   const due=dashDue();
   const dueH=due.length?`<div class="ddue">${due.map(x=>`<div class="dd"><span class="dn">${x.n<=0?'今月':x.ym&&x.n>60?`あと${Math.round(x.n/30)}か月`:`あと<b>${x.n}</b>日`}</span><span class="dl">${esc(x.name)}</span><span class="da">${man(x.amt)}</span></div>`).join('')}</div>`:'';
   return`<section class="card dash" aria-label="今月のまとめ">${top}
+    ${dueH?`<h3>⏳ 大きな支払いまで</h3>${dueH}`:''}
     <h3>💸 お金の流れ</h3>${flow}
+    <details class="dmore" data-dfold ${dashOpen?'open':''}><summary>📊 くわしく見る<small>なにに使った・今週</small></summary>
     <h3>🧾 今月なにに使った？</h3>${catH}
-    <h3>📅 今週</h3>${week}
-    ${dueH?`<h3>⏳ 大きな支払いまで</h3>${dueH}`:''}</section>`}
+    <h3>📅 今週</h3>${week}</details></section>`}
+let dashOpen=false;document.addEventListener('toggle',e=>{if(e.target&&e.target.hasAttribute&&e.target.hasAttribute('data-dfold'))dashOpen=e.target.open},true);
 function budgetCalc(){const b=S.settings.budget,ym=nowYM(),spent=sum(S.logs.filter(l=>inYM(l.ts,ym)))+sum(S.purchases.filter(p=>!p.sub&&p.date.slice(0,7)===ym))+sum(S.mercari.purchases.filter(p=>p.date.slice(0,7)===ym))+sum((S.cardTx||[]).filter(t=>txCounts(t)&&t.date.slice(0,7)===ym)),d=new Date(),left=dim(d.getFullYear(),d.getMonth()+1)-d.getDate()+1,rem=b-spent;return{b,spent,rem,left,per:Math.floor(Math.max(0,rem)/left)}}
 /* 毎日の支出：日々・購入履歴（定期便以外）・メルカリで買ったもの。0円の記録（家サウナなど）は数えない */
 function spendByDay(){const m={},add=(d,a)=>{if(a>0)m[d]=(m[d]||0)+a};S.logs.forEach(l=>add(iso(new Date(l.ts)),l.amount));S.purchases.filter(p=>!p.sub).forEach(p=>add(p.date,p.amount));S.mercari.purchases.forEach(p=>add(p.date,p.amount));(S.cardTx||[]).filter(txCounts).forEach(t=>add(t.date,t.amount));return m}
@@ -1048,7 +1048,9 @@ function txSync(force){if(!CLOUD||!S||mode!=='app'||S.settings.txAuto===false||t
 let txAll=false;
 function vTx(){const list=(S.cardTx||[]).filter(t=>!t.voided).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!list.length)return'';const nw=list.filter(t=>!t.ok),show=(txAll?list:nw.length?nw:list).slice(0,txAll?80:6);
   const row=t=>`<button class="txr ${txCounts(t)?'':'off'}" data-act="txEdit" data-id="${t.id}"><span class="d">${+t.date.slice(5,7)}/${+t.date.slice(8)}</span><span class="n">${esc(t.name)}<small>${CARDN[t.card]}・${esc(t.cat)}${t.kind==='quick'?'・速報':''}${t.link?'・手で記録済みとまとめた':''}${t.ignore?'・数えない':''}${t.payer&&t.payer!=='本人'?'・'+esc(t.payer):''}</small></span><span class="amt">${yen(t.amount)}</span></button>`;
-  return`<div class="card txc"><h2>💳 カードの利用 <span class="sub">${nw.length?`確認待ち ${nw.length}件`:'メールから自動で入ります'}</span></h2>${show.map(row).join('')}<div class="btns">${nw.length?'<button class="btn s" data-act="txOkAll">全部確かめた</button>':''}<button class="btn s plain" data-act="txAll">${txAll?'たたむ':'すべて見る'}</button></div><p class="hint">押すと名前・分け方・数えるかを直せます。お店ごとに覚えます。</p></div>`}
+  const mo=list.filter(t=>txCounts(t)&&t.date.slice(0,7)===nowYM()).reduce((a,t)=>a+t.amount,0);
+  return`<details class="card txc kbsum" data-txfold ${nw.length||txOpen||txAll?'open':''}><summary>💳 カードの利用<span class="sub">${nw.length?`<b class="neg">確認待ち ${nw.length}件</b>`:`今月 ${man(mo)}`}</span></summary>${show.map(row).join('')}<div class="btns">${nw.length?'<button class="btn s" data-act="txOkAll">全部確かめた</button>':''}<button class="btn s plain" data-act="txAll">${txAll?'たたむ':'すべて見る'}</button></div><p class="hint">押すと名前・分け方・数えるかを直せます。お店ごとに覚えます。</p></details>`}
+let txOpen=false;document.addEventListener('toggle',e=>{if(e.target&&e.target.hasAttribute&&e.target.hasAttribute('data-txfold'))txOpen=e.target.open},true);
 function vToday(){return todayTop()+dailyQ()+waitSummary()+vTx()+`<div id="rec"></div>`+vMicro()+`<div class="btns" style="margin:4px 0 16px"><button class="btn plain s" data-act="tab" data-t="week">📝 週の振り返り</button></div>`}
 function vMicro(){
   const now=new Date(),ws=weekStart(now).getTime(),ym=nowYM(),td=today();

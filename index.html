@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- hk-build:20261125210912 -->
+<!-- hk-build:20261125212014 -->
 <html lang="ja" data-pwa="1">
 <head>
 <meta charset="UTF-8">
@@ -113,6 +113,12 @@ input[type=range]{width:100%}
 .dd{display:grid;grid-template-columns:86px 1fr auto;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
 .dd .dn{font-size:13px}.dd .dn b{font-size:18px}.dd .da{font-weight:700}
 body.hide .dash .dbig,body.hide .dash .ca,body.hide .dash .da,body.hide .dash .dpace b{filter:blur(7px)}
+.dmore{margin-top:16px;border-top:1px solid var(--line2);padding-top:10px}
+.dmore>summary{list-style:none;cursor:pointer;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;min-height:40px;color:var(--accent)}
+.dmore>summary::-webkit-details-marker{display:none}.dmore>summary::after{content:"▾";margin-left:auto;color:var(--muted)}.dmore[open]>summary::after{content:"▴"}
+.dmore>summary small{font-weight:400;color:var(--muted);font-size:12px}
+.txc>summary .sub{margin-left:auto;font-weight:400;font-size:13px;color:var(--muted)}
+#kb .kbtools>div{margin-top:16px;padding-top:12px;border-top:1px solid var(--line2)}#kb .kbtools>div:first-of-type{border-top:0;padding-top:0}
 .pairf{margin-top:14px;text-align:left}.pairf label{display:block;font-size:14px;font-weight:600;margin-top:12px}.pairf input{margin-top:4px}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs button{flex:1;min-width:0;border:0;background:none;padding:8px 0 6px;cursor:pointer;color:var(--muted);font-size:10.5px;min-height:56px;white-space:nowrap}
@@ -362,6 +368,6 @@ nav.tabs button span{font-size:22px}
 <div id="root"></div>
 <dialog id="dlg"></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="app.js?v=20261125210912"></script>
+<script src="app.js?v=20261125212014"></script>
 </body>
 </html>
